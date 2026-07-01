@@ -1,0 +1,9 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+data/split_output/
+.git/
+.gitignore
+README.md
+azure-pipelines.yml

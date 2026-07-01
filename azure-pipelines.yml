@@ -1,0 +1,65 @@
+# Azure Pipelines CI for the PDF Splitter tool
+# Docs: https://aka.ms/yaml
+
+trigger:
+  branches:
+    include:
+      - main
+
+pr:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  pythonVersion: '3.12'
+  imageName: 'pdf-splitter'
+
+stages:
+  - stage: Build
+    displayName: 'Build and Validate'
+    jobs:
+      - job: PythonBuild
+        displayName: 'Python setup and syntax check'
+        steps:
+          - task: UsePythonVersion@0
+            displayName: 'Use Python $(pythonVersion)'
+            inputs:
+              versionSpec: '$(pythonVersion)'
+
+          - script: |
+              python -m pip install --upgrade pip
+              pip install -r requirements.txt
+            displayName: 'Install dependencies'
+
+          - script: |
+              python -m compileall main.py
+            displayName: 'Compile / syntax check'
+
+          - script: |
+              python -m pytest -q --junitxml=test-results.xml
+            displayName: 'Run tests'
+
+          - task: PublishTestResults@2
+            displayName: 'Publish test results'
+            condition: succeededOrFailed()
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'test-results.xml'
+
+      - job: DockerBuild
+        displayName: 'Build Docker image'
+        dependsOn: PythonBuild
+        steps:
+          - task: Docker@2
+            displayName: 'Build image'
+            inputs:
+              command: build
+              repository: '$(imageName)'
+              dockerfile: 'Dockerfile'
+              tags: |
+                $(Build.BuildId)
+                latest
