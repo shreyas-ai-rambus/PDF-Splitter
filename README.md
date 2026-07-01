@@ -102,6 +102,3 @@ that:
 3. Performs a syntax/build check of the source.
 4. Builds the Docker image.
 
-## License
-
-This project is provided as-is. Add your preferred license here.
